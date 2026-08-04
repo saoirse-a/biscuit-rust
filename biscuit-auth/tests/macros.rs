@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 use biscuit_auth::{builder, datalog::RunLimits, PrivateKey};
-use biscuit_auth::public_keys::PublicKey;
+use biscuit_auth::public_keys::PublicKeyData;
 use biscuit_quote::{
     authorizer, authorizer_merge, biscuit, biscuit_merge, block, block_merge, check, fact, policy,
     rule,
@@ -123,10 +123,9 @@ fn authorizer_macro_trailing_comma() {
 
 #[test]
 fn biscuit_macro() {
-    let pubkey = PublicKey::from_bytes(
-        biscuit_auth::builder::Algorithm::Ed25519,
-        hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db").unwrap(),
-    );
+    let pubkey = "ed25519/6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db"
+        .parse::<PublicKeyData>()
+        .unwrap();
 
     let s = String::from("my_value");
     let my_key = "my_value";
@@ -183,10 +182,9 @@ fn biscuit_macro_trailing_comma() {
 
 #[test]
 fn rule_macro() {
-    let pubkey = PublicKey::from_bytes(
-        biscuit_auth::builder::Algorithm::Ed25519,
-        hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db").unwrap(),
-    );
+    let pubkey = "ed25519/6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db"
+        .parse::<PublicKeyData>()
+        .unwrap();
     let mut term_set = BTreeSet::new();
     term_set.insert(builder::int(0i64));
     let r = rule!(
@@ -211,10 +209,9 @@ fn fact_macro() {
 
 #[test]
 fn check_macro() {
-    let pubkey = PublicKey::from_bytes(
-        biscuit_auth::builder::Algorithm::Ed25519,
-        hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db").unwrap(),
-    );
+    let pubkey = "ed25519/6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db"
+        .parse::<PublicKeyData>()
+        .unwrap();
     let mut term_set = BTreeSet::new();
     term_set.insert(builder::int(0i64));
     let c = check!(
@@ -230,10 +227,9 @@ fn check_macro() {
 
 #[test]
 fn policy_macro() {
-    let pubkey = PublicKey::from_bytes(
-        biscuit_auth::builder::Algorithm::Ed25519,
-        hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db").unwrap(),
-    );
+    let pubkey = "ed25519/6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db"
+        .parse::<PublicKeyData>()
+        .unwrap();
     let mut term_set = BTreeSet::new();
     term_set.insert(builder::int(0i64));
     let p = policy!(
@@ -288,10 +284,9 @@ fn json() {
 
 #[test]
 fn ecdsa() {
-    let pubkey = PublicKey::from_bytes(
-        biscuit_auth::builder::Algorithm::Secp256r1,
-        hex::decode("0245dd01132962da3812911b746b080aed714873c1812e7cefacf13e3880712da0").unwrap(),
-    );
+    let pubkey = "secp256r1/0245dd01132962da3812911b746b080aed714873c1812e7cefacf13e3880712da0"
+        .parse::<PublicKeyData>()
+        .unwrap();
     let mut term_set = BTreeSet::new();
     term_set.insert(builder::int(0i64));
     let r = rule!(
@@ -307,11 +302,10 @@ fn ecdsa() {
 
 #[test]
 fn trusting() {
-    // this should only work with a proper `PublicKey` value, and fail when trying to provide a string instead
-    let pubkey = PublicKey::from_bytes(
-        biscuit_auth::builder::Algorithm::Secp256r1,
-        hex::decode("0245dd01132962da3812911b746b080aed714873c1812e7cefacf13e3880712da0").unwrap(),
-    );
+    // this should only work with a proper `PublicKeyData` value, and fail when trying to provide a string instead
+    let pubkey = "secp256r1/0245dd01132962da3812911b746b080aed714873c1812e7cefacf13e3880712da0"
+        .parse::<PublicKeyData>()
+        .unwrap();
     let _ = {
         let pubkey = pubkey.clone();
         authorizer!(

@@ -12,12 +12,11 @@ use builder::{BiscuitBuilder, BlockBuilder};
 use prost::Message;
 use rand_core::{CryptoRng, RngCore};
 
-use self::public_keys::PublicKeys;
-use super::crypto::{PrivateKey, PublicKey, Signature};
+use self::public_keys::{PublicKeyData, PublicKeys};
 use super::datalog::SymbolTable;
 use super::error;
 use super::format::SerializedBiscuit;
-use crate::crypto::{self, SerializePrivateKey, Verify};
+use crate::crypto::{self, PrivateKey, PublicKey, Signature, SerializePrivateKey, Verify, Sign};
 use crate::format::convert::{proto_block_to_token_block, public_key_from_proto};
 use crate::format::schema::{self, ThirdPartyBlockContents};
 use crate::format::{ThirdPartyVerificationMode, THIRD_PARTY_SIGNATURE_VERSION};
@@ -256,10 +255,10 @@ impl<K: SerializePrivateKey> Biscuit<K> {
     /// creates a new token, using a provided CSPRNG
     ///
     /// the public part of the root key must be used for verification
-    pub(crate) fn new_with_rng<T: RngCore + CryptoRng>(
+    pub(crate) fn new_with_rng<RK: Sign, T: RngCore + CryptoRng>(
         rng: &mut T,
         root_key_id: Option<u32>,
-        root: &K,
+        root: &RK,
         symbols: SymbolTable,
         authority: Block,
     ) -> Result<Biscuit<K>, error::Token> {
@@ -276,9 +275,9 @@ impl<K: SerializePrivateKey> Biscuit<K> {
     /// block)
     ///
     /// the public part of the root keypair must be used for verification
-    pub(crate) fn new_with_key_pair(
+    pub(crate) fn new_with_key_pair<RK: Sign>(
         root_key_id: Option<u32>,
-        root_key: &K,
+        root_key: &RK,
         next_key: &K,
         mut symbols: SymbolTable,
         authority: Block,
@@ -522,7 +521,7 @@ impl<K: SerializePrivateKey> Biscuit<K> {
         let mut public_keys = PublicKeys::new();
 
         for pk in &block.public_keys {
-            public_keys.insert_proto(pk);
+            public_keys.insert(&PublicKeyData::from_proto(pk));
         }
         Ok(public_keys)
     }

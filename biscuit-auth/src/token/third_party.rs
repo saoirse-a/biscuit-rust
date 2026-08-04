@@ -6,14 +6,17 @@ use std::cmp::max;
 
 use prost::Message;
 
-use crate::crypto::SerializePrivateKey;
+use crate::Sign;
+use crate::crypto::{SerializePrivateKey, SerializePublicKey};
 use crate::{
     builder::BlockBuilder,
     crypto::generate_external_signature_payload_v1,
     datalog::SymbolTable,
     error,
-    format::{convert::token_block_to_proto_block, schema, SerializedBiscuit},
-    PrivateKey,
+    format::{
+        convert::{public_key_to_proto, token_block_to_proto_block},
+        schema, SerializedBiscuit,
+    },
 };
 
 use super::THIRD_PARTY_SIGNATURE_VERSION;
@@ -93,10 +96,10 @@ impl ThirdPartyRequest {
         Self::deserialize(&decoded)
     }
 
-    /// Creates a [`ThirdPartyBlock`] signed with the third party service's [`PrivateKey`]
-    pub fn create_block(
+    /// Creates a [`ThirdPartyBlock`] signed with the third party service's private key
+    pub fn create_block<EK: Sign<PublicKey: SerializePublicKey>>(
         self,
-        private_key: &PrivateKey,
+        private_key: &EK,
         block_builder: BlockBuilder,
     ) -> Result<ThirdPartyBlock, error::Token> {
         let symbols = SymbolTable::new();
@@ -123,7 +126,7 @@ impl ThirdPartyRequest {
             payload,
             external_signature: schema::ExternalSignature {
                 signature: signature.to_bytes().to_vec(),
-                public_key: public_key.to_proto(),
+                public_key: public_key_to_proto(&public_key),
             },
         };
 
@@ -156,6 +159,8 @@ impl ThirdPartyBlock {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::PrivateKey;
 
     #[test]
     fn third_party_request_roundtrip() {

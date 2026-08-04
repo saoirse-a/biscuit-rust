@@ -7,7 +7,7 @@ use std::{collections::HashMap, convert::TryFrom, fmt, str::FromStr};
 use nom::Finish;
 
 use crate::{
-    token::public_keys::PublicKey,
+    token::public_keys::PublicKeyData,
     datalog::{self, SymbolTable},
     error,
 };
@@ -24,7 +24,7 @@ pub struct Rule {
     pub expressions: Vec<Expression>,
     pub parameters: Option<HashMap<String, Option<Term>>>,
     pub scopes: Vec<Scope>,
-    pub scope_parameters: Option<HashMap<String, Option<PublicKey>>>,
+    pub scope_parameters: Option<HashMap<String, Option<PublicKeyData>>>,
 }
 
 impl Rule {
@@ -200,7 +200,7 @@ impl Rule {
     }
 
     /// replace a scope parameter with the pubkey argument
-    pub fn set_scope(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope(&mut self, name: &str, pubkey: PublicKeyData) -> Result<(), error::Token> {
         if let Some(parameters) = self.scope_parameters.as_mut() {
             match parameters.get_mut(name) {
                 None => Err(error::Token::Language(
@@ -226,7 +226,7 @@ impl Rule {
 
     /// replace a scope parameter with the public key argument, without raising an error if the
     /// parameter is not present in the rule scope
-    pub fn set_scope_lenient(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope_lenient(&mut self, name: &str, pubkey: PublicKeyData) -> Result<(), error::Token> {
         if let Some(parameters) = self.scope_parameters.as_mut() {
             match parameters.get_mut(name) {
                 None => Ok(()),
@@ -264,7 +264,7 @@ impl Rule {
     pub fn set_macro_scope_param(
         &mut self,
         name: &str,
-        param: PublicKey,
+        param: PublicKeyData,
     ) -> Result<(), error::Token> {
         self.set_scope_lenient(name, param)
     }
@@ -456,7 +456,7 @@ impl From<biscuit_parser::builder::Rule> for Rule {
                         (
                             k,
                             v.map(|pk| {
-                                PublicKey::from_bytes(pk.algorithm.into(), pk.key)
+                                PublicKeyData::from_bytes(pk.algorithm.into(), pk.key)
                             }),
                         )
                     })

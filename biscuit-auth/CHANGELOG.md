@@ -1,6 +1,24 @@
 # `7.0.0`
 
-- Abstract biscuits over the crypto implementation (#334)
+- Abstract biscuits over the crypto implementation (#334) Tokens are generic over the key type used
+  to sign them and four new traits are added: `Sign` and `SerializePrivateKey` for private keys and
+  `Verify` and `SerializePublicKey` for public keys.
+- New `PublicKeyData` type representing the inert data representation of a public key as it is
+  stored in a token, as well as `PublicKeys`, the block's public key table.  (#334)
+
+## Breaking changes
+
+- `KeyPair` is removed; use `PrivateKey` directly instead of `KeyPair`. APIs that previously took a
+  keypair are replaced with APIs that take a `PrivateKey` (i.e. `append_with_keypair` ->
+  `append_with_key`, `append_third_party_with_keypair` -> `append_third_party_with_key`).
+- `Biscuit` and `UnverifiedBiscuit` are generic over the private key type contained in their
+  proof. These are defaulted to `PrivateKey`, so this change should be transparent for most users
+  who use the default crypto types.
+- `RootKeyProvider` has an associated `Key` type, which is the type of the root key that is
+  provided.
+- All `algorithm()` methods return `builder::Algorithm` instead of
+  `format::schema::public_key::Algorithm`.
+- Datalog scopes now take `PublicKeyData` instead of the cryptographic `PublicKey` type.
 
 # `6.0.0`
 

@@ -8,6 +8,7 @@ use prost::Message;
 
 use super::{default_symbol_table, Biscuit, Block};
 use crate::crypto::SerializePrivateKey;
+use crate::token::public_keys::PublicKeyData;
 use crate::{
     builder::BlockBuilder,
     crypto::{self, PrivateKey, PublicKey, Signature},
@@ -371,7 +372,8 @@ impl UnverifiedBiscuit {
                 .append_serialized(&next_key, payload, Some(external_signature))?;
 
         for key in &block.public_keys[..] {
-            symbols.public_keys.insert_proto_fallible(key)?;
+            let data = PublicKeyData::from_proto(key);
+            symbols.public_keys.insert_fallible(&data)?;
         }
 
         blocks.push(block);

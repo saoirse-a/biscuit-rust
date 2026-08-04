@@ -918,7 +918,7 @@ mod tests {
     use token::builder::{self, load_and_translate_block, var};
     use token::{public_keys::PublicKeys, DATALOG_3_1};
 
-    use crate::token::public_keys::PublicKey as InertPublicKey;
+    use crate::token::public_keys::PublicKeyData;
     use crate::{
         builder::{BiscuitBuilder, BlockBuilder},
         PrivateKey,
@@ -951,7 +951,7 @@ mod tests {
         let mut scope_params = HashMap::new();
         scope_params.insert(
             "pk".to_string(),
-            InertPublicKey::from_bytes(
+            PublicKeyData::from_bytes(
                 crate::builder::Algorithm::Ed25519,
                 hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db")
                     .unwrap(),
@@ -1150,7 +1150,7 @@ mod tests {
         let external = PrivateKey::new();
 
         let mut scope_params = HashMap::new();
-        scope_params.insert("external_pub".to_string(), InertPublicKey::from(&external.public()));
+        scope_params.insert("external_pub".to_string(), PublicKeyData::from(&external.public()));
 
         let biscuit1 = Biscuit::builder()
             .code_with_params(
@@ -1182,8 +1182,8 @@ mod tests {
         let external2 = PrivateKey::new();
 
         let mut scope_params = HashMap::new();
-        scope_params.insert("external".to_string(), InertPublicKey::from(&external.public()));
-        scope_params.insert("external2".to_string(), InertPublicKey::from(&external2.public()));
+        scope_params.insert("external".to_string(), PublicKeyData::from(&external.public()));
+        scope_params.insert("external2".to_string(), PublicKeyData::from(&external2.public()));
 
         let mut authorizer = builder
             .code_with_params(
@@ -1258,7 +1258,7 @@ mod tests {
                     let mut r: Rule = "right($right) <- right($right) trusting {external}"
                         .try_into()
                         .unwrap();
-                    r.set_scope("external", InertPublicKey::from(&external.public())).unwrap();
+                    r.set_scope("external", PublicKeyData::from(&external.public())).unwrap();
                     r
                 },
                 AuthorizerLimits {
@@ -1288,7 +1288,7 @@ mod tests {
                     let mut r: Rule = "group($group) <- group($group) trusting {external}"
                         .try_into()
                         .unwrap();
-                    r.set_scope("external", InertPublicKey::from(&external.public())).unwrap();
+                    r.set_scope("external", PublicKeyData::from(&external.public())).unwrap();
                     r
                 },
                 AuthorizerLimits {

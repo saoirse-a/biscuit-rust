@@ -511,8 +511,8 @@ pub enum Proof<PK = PrivateKey> {
     Seal(Signature),
 }
 
-pub fn sign_authority_block<IK: Sign, NK: Verify + SerializePublicKey>(
-    key: &IK,
+pub fn sign_authority_block<RK: Sign, NK: Verify + SerializePublicKey>(
+    key: &RK,
     next_key: &NK,
     message: &[u8],
     version: u32,
@@ -561,9 +561,9 @@ pub fn sign_block<AK: Sign, NK: Verify + SerializePublicKey, EK: SerializePublic
     Ok(key.sign(&to_sign)?)
 }
 
-pub fn verify_authority_block_signature<IK: Verify, NK: Verify + SerializePublicKey, EK: Verify + SerializePublicKey>(
+pub fn verify_authority_block_signature<RK: Verify, NK: Verify + SerializePublicKey, EK: Verify + SerializePublicKey>(
     block: &Block<NK, EK>,
-    public_key: &IK,
+    public_key: &RK,
 ) -> Result<(), error::Format> {
     let to_verify = match block.version {
         0 => generate_block_signature_payload_v0(

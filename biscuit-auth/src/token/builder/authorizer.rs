@@ -14,7 +14,7 @@ use prost::Message;
 
 use crate::PrivateKey;
 use crate::crypto::SerializePrivateKey;
-use crate::token::public_keys::PublicKey;
+use crate::token::public_keys::PublicKeyData;
 use crate::{
     builder::Convert,
     builder_ext::{AuthorizerExt, BuilderExt},
@@ -119,7 +119,7 @@ impl AuthorizerBuilder {
         mut self,
         source: T,
         params: HashMap<String, Term>,
-        scope_params: HashMap<String, PublicKey>,
+        scope_params: HashMap<String, PublicKeyData>,
     ) -> Result<Self, error::Token> {
         let source = source.as_ref();
 
@@ -343,7 +343,9 @@ impl AuthorizerBuilder {
         if let Some(token) = token {
             for (i, block) in token.container.blocks.iter().enumerate() {
                 if let Some(sig) = block.external_signature.as_ref() {
-                    let new_key_id = symbols.public_keys.insert_serialize(&sig.public_key);
+                    let new_key_id = symbols
+                        .public_keys
+                        .insert(&PublicKeyData::from(&sig.public_key));
 
                     public_key_to_block_id
                         .entry(new_key_id as usize)
@@ -610,7 +612,7 @@ impl AuthorizerBuilder {
         for public_key in world.public_keys {
             symbols
                 .public_keys
-                .insert_proto(&public_key);
+                .insert(&PublicKeyData::from_proto(&public_key));
         }
 
         let authorizer_block = proto_snapshot_block_to_token_block(&world.authorizer_block)?;

@@ -4,7 +4,7 @@
  */
 use std::fmt;
 
-use crate::token::public_keys::PublicKey;
+use crate::token::public_keys::PublicKeyData;
 use crate::{datalog::SymbolTable, error};
 
 use super::Convert;
@@ -17,7 +17,7 @@ pub enum Scope {
     /// Trusts the current block and all previous ones
     Previous,
     /// Trusts the current block and any block signed by the public key
-    PublicKey(PublicKey),
+    PublicKey(PublicKeyData),
     /// Used for parameter substitution
     Parameter(String),
 }
@@ -28,7 +28,7 @@ impl Convert<crate::token::Scope> for Scope {
             Scope::Authority => crate::token::Scope::Authority,
             Scope::Previous => crate::token::Scope::Previous,
             Scope::PublicKey(key) => {
-                crate::token::Scope::PublicKey(symbols.public_keys.insert_data(key))
+                crate::token::Scope::PublicKey(symbols.public_keys.insert(key))
             }
             // The error is caught in the `add_xxx` functions, so this should
             // not happen™
@@ -73,7 +73,7 @@ impl From<biscuit_parser::builder::Scope> for Scope {
             biscuit_parser::builder::Scope::Authority => Scope::Authority,
             biscuit_parser::builder::Scope::Previous => Scope::Previous,
             biscuit_parser::builder::Scope::PublicKey(pk) => Scope::PublicKey(
-                PublicKey::from_bytes(pk.algorithm.into(), pk.key)
+                PublicKeyData::from_bytes(pk.algorithm.into(), pk.key)
             ),
             biscuit_parser::builder::Scope::Parameter(s) => Scope::Parameter(s),
         }

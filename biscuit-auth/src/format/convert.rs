@@ -11,7 +11,7 @@ use crate::datalog::*;
 use crate::error;
 use crate::format::schema::Empty;
 use crate::format::schema::MapEntry;
-use crate::token::public_keys::PublicKeys;
+use crate::token::public_keys::{PublicKeyData, PublicKeys};
 use crate::token::Scope;
 use crate::token::{authorizer::AuthorizerPolicies, Block};
 use crate::token::{DATALOG_3_1, DATALOG_3_2, DATALOG_3_3, MAX_SCHEMA_VERSION, MIN_SCHEMA_VERSION};
@@ -104,7 +104,7 @@ pub fn proto_block_to_token_block<EK: SerializePublicKey>(
 
     let mut public_keys = PublicKeys::new();
     for pk in &input.public_keys {
-        public_keys.insert_proto_fallible(pk)?;
+        public_keys.insert_fallible(&PublicKeyData::from_proto(pk))?;
     }
     let symbols =
         SymbolTable::from_symbols_and_public_keys(input.symbols.clone(), public_keys.keys.clone())?;
@@ -120,7 +120,7 @@ pub fn proto_block_to_token_block<EK: SerializePublicKey>(
         checks,
         context,
         version,
-        external_key: external_key.map(crate::token::public_keys::PublicKey::from),
+        external_key: external_key.map(PublicKeyData::from),
         public_keys,
         scopes,
     })
@@ -189,12 +189,10 @@ pub fn proto_snapshot_block_to_token_block(
 
     detected_schema_version.check_compatibility(version)?;
 
-    let external_key = match &input.external_key {
-        None => None,
-        Some(key) => Some(crate::token::public_keys::PublicKey::from(
-            &crate::crypto::PublicKey::from_proto(key)?,
-        )),
-    };
+    let external_key = input
+        .external_key
+        .as_ref()
+        .map(PublicKeyData::from_proto);
 
     Ok(Block {
         symbols: SymbolTable::new(),

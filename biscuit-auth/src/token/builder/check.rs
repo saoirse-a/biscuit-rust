@@ -9,7 +9,7 @@ use nom::Finish;
 use crate::{
     datalog::{self, SymbolTable},
     error,
-    token::public_keys::PublicKey,
+    token::public_keys::PublicKeyData,
 };
 
 #[cfg(feature = "datalog-macro")]
@@ -59,7 +59,7 @@ impl Check {
     }
 
     /// replace a scope parameter with the pubkey argument
-    pub fn set_scope(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope(&mut self, name: &str, pubkey: PublicKeyData) -> Result<(), error::Token> {
         let mut found = false;
         for query in &mut self.queries {
             if query.set_scope(name, pubkey.clone()).is_ok() {
@@ -91,7 +91,7 @@ impl Check {
 
     /// replace a scope parameter with the term argument, without raising an error if the
     /// parameter is not present in the check
-    pub fn set_scope_lenient(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope_lenient(&mut self, name: &str, pubkey: PublicKeyData) -> Result<(), error::Token> {
         for query in &mut self.queries {
             query.set_scope_lenient(name, pubkey.clone())?;
         }
@@ -117,7 +117,7 @@ impl Check {
     pub fn set_macro_scope_param(
         &mut self,
         name: &str,
-        param: PublicKey,
+        param: PublicKeyData,
     ) -> Result<(), error::Token> {
         self.set_scope_lenient(name, param)
     }

@@ -7,7 +7,7 @@ use super::{
     Convert, Expression, Fact, Op, Rule, Scope, Term,
 };
 use crate::builder_ext::BuilderExt;
-use crate::token::public_keys::PublicKey;
+use crate::token::public_keys::PublicKeyData;
 use crate::datalog::{get_schema_version, SymbolTable};
 use crate::error;
 use biscuit_parser::parser::parse_block_source;
@@ -82,7 +82,7 @@ impl BlockBuilder {
         mut self,
         source: T,
         params: HashMap<String, Term>,
-        scope_params: HashMap<String, PublicKey>,
+        scope_params: HashMap<String, PublicKeyData>,
     ) -> Result<Self, error::Token> {
         let input = source.as_ref();
 

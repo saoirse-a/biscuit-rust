@@ -6,7 +6,7 @@ use std::{convert::TryFrom, fmt, str::FromStr};
 
 use nom::Finish;
 
-use crate::{error, token::public_keys::PublicKey};
+use crate::{error, token::public_keys::PublicKeyData};
 
 #[cfg(feature = "datalog-macro")]
 use super::ToAnyParam;
@@ -53,7 +53,7 @@ impl Policy {
     }
 
     /// replace a scope parameter with the pubkey argument
-    pub fn set_scope(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope(&mut self, name: &str, pubkey: PublicKeyData) -> Result<(), error::Token> {
         let mut found = false;
         for query in &mut self.queries {
             if query.set_scope(name, pubkey.clone()).is_ok() {
@@ -83,7 +83,7 @@ impl Policy {
     }
 
     /// replace a scope parameter with the pubkey argument, ignoring unknown parameters
-    pub fn set_scope_lenient(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope_lenient(&mut self, name: &str, pubkey: PublicKeyData) -> Result<(), error::Token> {
         for query in &mut self.queries {
             query.set_scope_lenient(name, pubkey.clone())?;
         }
@@ -109,7 +109,7 @@ impl Policy {
     pub fn set_macro_scope_param(
         &mut self,
         name: &str,
-        param: PublicKey,
+        param: PublicKeyData,
     ) -> Result<(), error::Token> {
         self.set_scope_lenient(name, param)
     }

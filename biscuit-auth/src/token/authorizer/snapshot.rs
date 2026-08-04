@@ -19,6 +19,7 @@ use crate::{
     },
     token::{default_symbol_table, MAX_SCHEMA_VERSION, MIN_SCHEMA_VERSION},
 };
+use crate::token::public_keys::PublicKeyData;
 
 impl super::Authorizer {
     pub fn from_snapshot(input: schema::AuthorizerSnapshot) -> Result<Self, error::Token> {
@@ -51,7 +52,7 @@ impl super::Authorizer {
             symbols.insert(&symbol);
         }
         for public_key in world.public_keys {
-            symbols.public_keys.insert_proto(&public_key);
+            symbols.public_keys.insert(&PublicKeyData::from_proto(&public_key));
         }
 
         let authorizer_block = proto_snapshot_block_to_token_block(&world.authorizer_block)?;
@@ -321,12 +322,12 @@ mod tests {
 
     use crate::{datalog::RunLimits, Algorithm, AuthorizerBuilder};
     use crate::{Authorizer, BiscuitBuilder, PrivateKey};
-    use crate::token::public_keys::PublicKey as InertPublicKey;
+    use crate::token::public_keys::PublicKeyData;
 
     #[test]
     fn roundtrip_builder() {
-        let secp_pubkey = InertPublicKey::from(&PrivateKey::new_with_algorithm(Algorithm::Secp256r1).public());
-        let ed_pubkey = InertPublicKey::from(&PrivateKey::new_with_algorithm(Algorithm::Ed25519).public());
+        let secp_pubkey = PublicKeyData::from(&PrivateKey::new_with_algorithm(Algorithm::Secp256r1).public());
+        let ed_pubkey = PublicKeyData::from(&PrivateKey::new_with_algorithm(Algorithm::Ed25519).public());
         let builder = AuthorizerBuilder::new()
             .set_limits(RunLimits {
                 max_facts: 42,
@@ -357,8 +358,8 @@ mod tests {
 
     #[test]
     fn roundtrip_with_token() {
-        let secp_pubkey = InertPublicKey::from(&PrivateKey::new_with_algorithm(Algorithm::Secp256r1).public());
-        let ed_pubkey = InertPublicKey::from(&PrivateKey::new_with_algorithm(Algorithm::Ed25519).public());
+        let secp_pubkey = PublicKeyData::from(&PrivateKey::new_with_algorithm(Algorithm::Secp256r1).public());
+        let ed_pubkey = PublicKeyData::from(&PrivateKey::new_with_algorithm(Algorithm::Ed25519).public());
         let builder = AuthorizerBuilder::new()
             .set_limits(RunLimits {
                 max_facts: 42,

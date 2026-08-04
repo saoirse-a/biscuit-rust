@@ -11,8 +11,9 @@ use biscuit::datalog::SymbolTable;
 use biscuit::error;
 use biscuit::format::convert;
 use biscuit::macros::*;
+use biscuit::public_keys::PublicKeyData;
 use biscuit::{builder::*, builder_ext::*, Biscuit};
-use biscuit::{PrivateKey, PublicKey};
+use biscuit::PrivateKey;
 use biscuit_auth::builder;
 use biscuit_auth::builder::Algorithm;
 use biscuit_auth::datalog::ExternFunc;
@@ -380,7 +381,7 @@ fn validate_token_with_limits_and_external_functions(
             .world
             .public_keys
             .iter()
-            .map(|k| PublicKey::from_proto(k).unwrap())
+            .map(PublicKeyData::from_proto)
             .collect(),
     )
     .unwrap();
@@ -1651,7 +1652,7 @@ fn third_party(target: &str, root: &PrivateKey, test: bool) -> TestResult {
         right("read");
         check if group("admin") trusting {external_pub}
     "#,
-        external_pub = external.public()
+        external_pub = PublicKeyData::from(&external.public())
     )
     .build_with_rng(root, SymbolTable::default(), &mut rng)
     .unwrap();
@@ -1793,7 +1794,7 @@ fn public_keys_interning(target: &str, root: &PrivateKey, test: bool) -> TestRes
         query(0);
         check if true trusting previous, {k1};
     "#,
-        k1 = external1.public()
+        k1 = PublicKeyData::from(&external1.public())
     )
     .build_with_rng(root, SymbolTable::default(), &mut rng)
     .unwrap();
@@ -1810,8 +1811,8 @@ fn public_keys_interning(target: &str, root: &PrivateKey, test: bool) -> TestRes
         check if query(2), query(3) trusting {k2};
         check if query(1) trusting {k1};
         "#,
-                k1 = external1.public(),
-                k2 = external2.public(),
+                k1 = PublicKeyData::from(&external1.public()),
+                k2 = PublicKeyData::from(&external2.public()),
             ),
         )
         .unwrap();
@@ -1834,8 +1835,8 @@ fn public_keys_interning(target: &str, root: &PrivateKey, test: bool) -> TestRes
         check if query(2), query(3) trusting {k2};
         check if query(1) trusting {k1};
         "#,
-                k1 = external1.public(),
-                k2 = external2.public(),
+                k1 = PublicKeyData::from(&external1.public()),
+                k2 = PublicKeyData::from(&external2.public()),
             ),
         )
         .unwrap();
@@ -1858,8 +1859,8 @@ fn public_keys_interning(target: &str, root: &PrivateKey, test: bool) -> TestRes
         check if query(2), query(3) trusting {k2};
         check if query(1) trusting {k1};
         "#,
-                k1 = external1.public(),
-                k2 = external2.public(),
+                k1 = PublicKeyData::from(&external1.public()),
+                k2 = PublicKeyData::from(&external2.public()),
             ),
         )
         .unwrap();
@@ -1881,8 +1882,8 @@ fn public_keys_interning(target: &str, root: &PrivateKey, test: bool) -> TestRes
             check if query(2) trusting {k2};
             check if query(4) trusting {k3};
             "#,
-                k2 = external2.public(),
-                k3 = external3.public(),
+                k2 = PublicKeyData::from(&external2.public()),
+                k3 = PublicKeyData::from(&external3.public()),
             ),
         )
         .unwrap();
@@ -2413,7 +2414,7 @@ fn secp256r1_third_party(target: &str, root: &PrivateKey, test: bool) -> TestRes
         right("file1", "write");
         check if from_third(true) trusting {external_pub};
     "#,
-        external_pub = external_keypair.public(),
+        external_pub = PublicKeyData::from(&external_keypair.public()),
     )
     .build_with_key_pair(root, SymbolTable::default(), &keypair2)
     .unwrap();
@@ -2516,8 +2517,7 @@ fn print_blocks(token: &Biscuit) -> Vec<BlockContent> {
             public_keys: token
                 .block_public_keys(i)
                 .unwrap()
-                .into_inner()
-                .iter()
+                .into_iter()
                 .map(|k| k.print())
                 .collect(),
             external_key: token.block_external_key(i).unwrap().map(|k| k.print()),

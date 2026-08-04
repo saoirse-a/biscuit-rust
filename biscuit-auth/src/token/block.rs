@@ -27,7 +27,7 @@ pub struct Block {
     /// format version used to generate this block
     pub version: u32,
     /// key used in optional external signature
-    pub external_key: Option<public_keys::PublicKey>,
+    pub external_key: Option<public_keys::PublicKeyData>,
     /// list of public keys referenced by this block
     pub public_keys: PublicKeys,
     /// list of scopes defining which blocks are trusted by this block

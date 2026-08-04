@@ -12,7 +12,7 @@ use std::{
 // reexport those because the builder uses the same definitions
 use super::Block;
 #[cfg(any(test, feature = "datalog-macro"))]
-use crate::token::public_keys::PublicKey;
+use crate::token::public_keys::PublicKeyData;
 use crate::datalog::SymbolTable;
 pub use crate::datalog::{
     Binary as DatalogBinary, Expression as DatalogExpression, Op as DatalogOp,
@@ -166,7 +166,7 @@ pub fn parameter(p: &str) -> Term {
 #[cfg(feature = "datalog-macro")]
 pub enum AnyParam {
     Term(Term),
-    PublicKey(PublicKey),
+    PublicKey(PublicKeyData),
 }
 
 #[cfg(feature = "datalog-macro")]
@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn set_rule_scope_parameters() {
-        let pubkey = PublicKey::from_bytes(
+        let pubkey = PublicKeyData::from_bytes(
             Algorithm::Ed25519,
             hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db")
                 .unwrap(),
@@ -240,7 +240,7 @@ mod tests {
         params.insert("p2".to_string(), 1i64.into());
         params.insert("p3".to_string(), true.into());
         params.insert("p4".to_string(), "this will be ignored".into());
-        let pubkey = PublicKey::from_bytes(
+        let pubkey = PublicKeyData::from_bytes(
             Algorithm::Ed25519,
             hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db")
                 .unwrap(),

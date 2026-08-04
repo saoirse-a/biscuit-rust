@@ -22,6 +22,7 @@ use crate::crypto::Signature;
 use crate::datalog::SymbolTable;
 use crate::token::RootKeyProvider;
 use crate::token::DATALOG_3_3;
+use crate::token::public_keys::PublicKeyData;
 
 /// Structures generated from the Protobuf schema
 pub mod schema; /*{
@@ -182,7 +183,8 @@ impl<K: SerializePrivateKey> SerializedBiscuit<K> {
         symbols.extend(&SymbolTable::from(authority.symbols.clone())?)?;
 
         for pk in &authority.public_keys {
-            symbols.public_keys.insert_proto_fallible(&pk)?;
+            let data = PublicKeyData::from_proto(pk);
+            symbols.public_keys.insert_fallible(&data)?;
         }
 
         let mut blocks = vec![];
@@ -197,7 +199,8 @@ impl<K: SerializePrivateKey> SerializedBiscuit<K> {
             if block.external_signature.is_none() {
                 symbols.extend(&SymbolTable::from(deser.symbols.clone())?)?;
                 for pk in &deser.public_keys {
-                    symbols.public_keys.insert_proto_fallible(&pk)?;
+                    let data = PublicKeyData::from_proto(pk);
+                    symbols.public_keys.insert_fallible(&data)?;
                 }
             }
 
@@ -276,16 +279,16 @@ impl<K: SerializePrivateKey> SerializedBiscuit<K> {
     }
 
     /// creates a new token
-    pub fn new<IK: Sign>(
+    pub fn new<RK: Sign>(
         root_key_id: Option<u32>,
-        root_private_key: &IK,
+        root_private_key: &RK,
         next_private_key: &K,
         authority: &Block,
     ) -> Result<Self, error::Token> {
         let authority_signature_version = block_signature_version(
             root_private_key,
             next_private_key,
-            &None::<ExternalSignature>,
+            &None::<ExternalSignature<K::PublicKey>>,
             &Some(authority.version),
             std::iter::empty(),
         );
@@ -299,9 +302,9 @@ impl<K: SerializePrivateKey> SerializedBiscuit<K> {
     }
 
     /// creates a new token
-    pub(crate) fn new_inner<IK: Sign>(
+    pub(crate) fn new_inner<RK: Sign>(
         root_key_id: Option<u32>,
-        root_private_key: &IK,
+        root_private_key: &RK,
         next_private_key: &K,
         authority: &Block,
         authority_signature_version: u32,
@@ -438,13 +441,13 @@ impl<K: SerializePrivateKey> SerializedBiscuit<K> {
     }
 
     /// checks the signature on a deserialized token
-    pub fn verify<IK: Verify>(&self, root: &IK) -> Result<(), error::Format> {
+    pub fn verify<RK: Verify>(&self, root: &RK) -> Result<(), error::Format> {
         self.verify_inner(root, ThirdPartyVerificationMode::PreviousSignatureHashing)
     }
 
-    pub(crate) fn verify_inner<IK: Verify>(
+    pub(crate) fn verify_inner<RK: Verify>(
         &self,
-        root: &IK,
+        root: &RK,
         verification_mode: ThirdPartyVerificationMode,
     ) -> Result<(), error::Format> {
         //FIXME: try batched signature verification
@@ -546,8 +549,8 @@ pub(crate) enum ThirdPartyVerificationMode {
     PreviousSignatureHashing,
 }
 
-fn block_signature_version<I, IK: Sign, AK: Sign, EK>(
-    block_private_key: &IK,
+fn block_signature_version<I, RK: Sign, AK: Sign, EK>(
+    block_private_key: &RK,
     next_private_key: &AK,
     external_signature: &Option<ExternalSignature<EK>>,
     block_version: &Option<u32>,

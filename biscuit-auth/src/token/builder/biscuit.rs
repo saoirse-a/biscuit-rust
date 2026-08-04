@@ -4,22 +4,23 @@
  */
 use super::{BlockBuilder, Check, Fact, Rule, Scope, Term};
 use crate::builder_ext::BuilderExt;
-use crate::crypto::SerializePrivateKey;
-use crate::token::public_keys::PublicKey;
+use crate::crypto::{SerializePrivateKey, Sign};
+use crate::token::public_keys::PublicKeyData;
 use crate::datalog::SymbolTable;
 use crate::token::default_symbol_table;
-use crate::{error, Biscuit};
+use crate::{Biscuit, PrivateKey, error};
 use rand::{CryptoRng, RngCore};
 
 use std::fmt;
+use std::marker::PhantomData;
 use std::time::SystemTime;
 use std::{collections::HashMap, convert::TryInto, fmt::Write};
 
 /// creates a Biscuit
-#[derive(Clone, Default)]
-pub struct BiscuitBuilder {
+pub struct BiscuitBuilder<K = PrivateKey> {
     inner: BlockBuilder,
     root_key_id: Option<u32>,
+    _marker: PhantomData<K>,
 }
 
 impl BiscuitBuilder {
@@ -27,10 +28,23 @@ impl BiscuitBuilder {
         BiscuitBuilder {
             inner: BlockBuilder::new(),
             root_key_id: None,
+            _marker: PhantomData,
         }
     }
+}
 
-    pub fn merge(mut self, other: BlockBuilder) -> Self {
+impl<K> Default for BiscuitBuilder<K> {
+    fn default() -> BiscuitBuilder<K> {
+        BiscuitBuilder {
+            inner: BlockBuilder::new(),
+            root_key_id: None,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<K: SerializePrivateKey> BiscuitBuilder<K> {
+    pub fn merge(mut self, other: BlockBuilder) -> BiscuitBuilder<K> {
         self.inner = self.inner.merge(other);
         self
     }
@@ -70,7 +84,7 @@ impl BiscuitBuilder {
         mut self,
         source: T,
         params: HashMap<String, Term>,
-        scope_params: HashMap<String, PublicKey>,
+        scope_params: HashMap<String, PublicKeyData>,
     ) -> Result<Self, error::Token> {
         self.inner = self.inner.code_with_params(source, params, scope_params)?;
         Ok(self)
@@ -125,21 +139,21 @@ impl BiscuitBuilder {
         f
     }
 
-    pub fn build<K: SerializePrivateKey>(self, root_key: &K) -> Result<Biscuit<K>, error::Token> {
+    pub fn build<RK: Sign>(self, root_key: &RK) -> Result<Biscuit<K>, error::Token> {
         self.build_with_symbols(root_key, default_symbol_table())
     }
 
-    pub fn build_with_symbols<K: SerializePrivateKey>(
+    pub fn build_with_symbols<RK: Sign>(
         self,
-        root_key: &K,
+        root_key: &RK,
         symbols: SymbolTable,
     ) -> Result<Biscuit<K>, error::Token> {
         self.build_with_rng(root_key, symbols, &mut rand::rngs::OsRng)
     }
 
-    pub fn build_with_rng<K: SerializePrivateKey, R: RngCore + CryptoRng>(
+    pub fn build_with_rng<RK: Sign, R: RngCore + CryptoRng>(
         self,
-        root: &K,
+        root: &RK,
         symbols: SymbolTable,
         rng: &mut R,
     ) -> Result<Biscuit<K>, error::Token> {
@@ -147,14 +161,24 @@ impl BiscuitBuilder {
         Biscuit::new_with_rng(rng, self.root_key_id, root, symbols, authority_block)
     }
 
-    pub fn build_with_key_pair<K: SerializePrivateKey>(
+    pub fn build_with_key_pair<RK: Sign>(
         self,
-        root: &K,
+        root: &RK,
         symbols: SymbolTable,
         next: &K,
     ) -> Result<Biscuit<K>, error::Token> {
         let authority_block = self.inner.build(symbols.clone());
         Biscuit::new_with_key_pair(self.root_key_id, root, next, symbols, authority_block)
+    }
+}
+
+impl<K> Clone for BiscuitBuilder<K> {
+    fn clone(&self) -> BiscuitBuilder<K> {
+        BiscuitBuilder {
+            inner: self.inner.clone(),
+            root_key_id: self.root_key_id,
+            _marker: PhantomData,
+        }
     }
 }
 

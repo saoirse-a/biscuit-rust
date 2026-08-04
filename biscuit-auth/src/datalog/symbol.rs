@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 use crate::token::default_symbol_table;
-use crate::token::public_keys::PublicKey;
+use crate::token::public_keys::PublicKeyData;
 use crate::{error, token::public_keys::PublicKeys};
 
 use super::{Check, Fact, Predicate, Rule, Term, World};
@@ -77,7 +77,7 @@ impl SymbolTable {
 
     pub fn from_symbols_and_public_keys(
         symbols: Vec<String>,
-        public_keys: Vec<PublicKey>,
+        public_keys: Vec<PublicKeyData>,
     ) -> Result<Self, error::Format> {
         let mut table = Self::from(symbols)?;
         table.public_keys = PublicKeys::from_keys(public_keys);
