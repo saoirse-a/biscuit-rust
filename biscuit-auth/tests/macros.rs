@@ -2,7 +2,7 @@
  * Copyright (c) 2019 Geoffroy Couprie <contact@geoffroycouprie.com> and Contributors to the Eclipse Foundation.
  * SPDX-License-Identifier: Apache-2.0
  */
-use biscuit_auth::{builder, datalog::RunLimits, PrivateKey};
+use biscuit_auth::{builder, datalog::RunLimits, PrivateKey, PublicKey};
 use biscuit_auth::public_keys::PublicKeyData;
 use biscuit_quote::{
     authorizer, authorizer_merge, biscuit, biscuit_merge, block, block_merge, check, fact, policy,
@@ -323,4 +323,33 @@ fn trusting() {
       trusting {pubkey}
     "#,
     );
+}
+
+#[test]
+fn trusting_key_types() {
+    // scope parameters accept anything that converts into `PublicKeyData`: the
+    // serialized form itself, the default key type by value, and any key
+    // implementing `SerializePublicKey` by reference
+    let key = "secp256r1/0245dd01132962da3812911b746b080aed714873c1812e7cefacf13e3880712da0"
+        .parse::<PublicKey>()
+        .unwrap();
+    let expected = r#"data($x) <- nonce($x) trusting secp256r1/0245dd01132962da3812911b746b080aed714873c1812e7cefacf13e3880712da0"#;
+
+    let owned = {
+        let pubkey = key.clone();
+        rule!(r#"data($x) <- nonce($x) trusting {pubkey}"#)
+    };
+    assert_eq!(owned.to_string(), expected);
+
+    let by_ref = {
+        let pubkey = &key;
+        rule!(r#"data($x) <- nonce($x) trusting {pubkey}"#)
+    };
+    assert_eq!(by_ref.to_string(), expected);
+
+    let data = {
+        let pubkey = PublicKeyData::from(&key);
+        rule!(r#"data($x) <- nonce($x) trusting {pubkey}"#)
+    };
+    assert_eq!(data.to_string(), expected);
 }

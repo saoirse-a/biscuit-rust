@@ -11,7 +11,7 @@ use std::{
 
 // reexport those because the builder uses the same definitions
 use super::Block;
-#[cfg(any(test, feature = "datalog-macro"))]
+#[cfg(test)]
 use crate::token::public_keys::PublicKeyData;
 use crate::datalog::SymbolTable;
 pub use crate::datalog::{
@@ -161,17 +161,6 @@ pub fn set(s: BTreeSet<Term>) -> Term {
 /// creates a parameter
 pub fn parameter(p: &str) -> Term {
     Term::Parameter(p.to_string())
-}
-
-#[cfg(feature = "datalog-macro")]
-pub enum AnyParam {
-    Term(Term),
-    PublicKey(PublicKeyData),
-}
-
-#[cfg(feature = "datalog-macro")]
-pub trait ToAnyParam {
-    fn to_any_param(&self) -> AnyParam;
 }
 
 #[cfg(test)]

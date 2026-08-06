@@ -5,6 +5,9 @@
   `Verify` and `SerializePublicKey` for public keys.
 - New `PublicKeyData` type representing the inert data representation of a public key as it is
   stored in a token, as well as `PublicKeys`, the block's public key table.  (#334)
+- `Term` implements `From<Uuid>` with the `uuid` feature.
+- Scope parameters are `Into<PublicKeyData>` so they can take anything which can be converted into a
+  public key (including `&K: SerializePublicKey`).
 
 ## Breaking changes
 
@@ -19,6 +22,10 @@
 - All `algorithm()` methods return `builder::Algorithm` instead of
   `format::schema::public_key::Algorithm`.
 - Datalog scopes now take `PublicKeyData` instead of the cryptographic `PublicKey` type.
+- The `ToAnyParam` trait and `AnyParam` enum are removed; users who were implementing `ToAnyParam`
+  for custom types should implement `From<MyType> for Term` instead.
+- The `set_macro_param` and `set_macro_scope_param` methods are removed; macros now call
+  `set_lenient` and `set_scope_lenient`.
 
 # `6.0.0`
 

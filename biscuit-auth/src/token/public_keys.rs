@@ -147,6 +147,12 @@ impl<K: SerializePublicKey> From<&K> for PublicKeyData {
     }
 }
 
+impl From<crate::crypto::PublicKey> for PublicKeyData {
+    fn from(key: crate::crypto::PublicKey) -> PublicKeyData {
+        (&key).into()
+    }
+}
+
 impl Display for PublicKeyData {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}/{}", self.algorithm, hex::encode(&self.key))

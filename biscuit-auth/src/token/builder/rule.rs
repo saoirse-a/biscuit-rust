@@ -12,8 +12,6 @@ use crate::{
     error,
 };
 
-#[cfg(feature = "datalog-macro")]
-use super::ToAnyParam;
 use super::{Convert, Expression, Predicate, Scope, Term};
 
 /// Builder for a Datalog rule
@@ -200,7 +198,11 @@ impl Rule {
     }
 
     /// replace a scope parameter with the pubkey argument
-    pub fn set_scope(&mut self, name: &str, pubkey: PublicKeyData) -> Result<(), error::Token> {
+    pub fn set_scope<T: Into<PublicKeyData>>(
+        &mut self,
+        name: &str,
+        pubkey: T,
+    ) -> Result<(), error::Token> {
         if let Some(parameters) = self.scope_parameters.as_mut() {
             match parameters.get_mut(name) {
                 None => Err(error::Token::Language(
@@ -210,7 +212,7 @@ impl Rule {
                     },
                 )),
                 Some(v) => {
-                    *v = Some(pubkey);
+                    *v = Some(pubkey.into());
                     Ok(())
                 }
             }
@@ -226,12 +228,16 @@ impl Rule {
 
     /// replace a scope parameter with the public key argument, without raising an error if the
     /// parameter is not present in the rule scope
-    pub fn set_scope_lenient(&mut self, name: &str, pubkey: PublicKeyData) -> Result<(), error::Token> {
+    pub fn set_scope_lenient<T: Into<PublicKeyData>>(
+        &mut self,
+        name: &str,
+        pubkey: T,
+    ) -> Result<(), error::Token> {
         if let Some(parameters) = self.scope_parameters.as_mut() {
             match parameters.get_mut(name) {
                 None => Ok(()),
                 Some(v) => {
-                    *v = Some(pubkey);
+                    *v = Some(pubkey.into());
                     Ok(())
                 }
             }
@@ -243,30 +249,6 @@ impl Rule {
                 },
             ))
         }
-    }
-
-    #[cfg(feature = "datalog-macro")]
-    pub fn set_macro_param<T: ToAnyParam>(
-        &mut self,
-        name: &str,
-        param: T,
-    ) -> Result<(), error::Token> {
-        use super::AnyParam;
-
-        match param.to_any_param() {
-            AnyParam::Term(t) => self.set_lenient(name, t),
-            AnyParam::PublicKey(pubkey) => self.set_scope_lenient(name, pubkey),
-        }
-    }
-
-    // TODO maybe introduce a conversion trait to support refs, multiple values, non-pk scopes
-    #[cfg(feature = "datalog-macro")]
-    pub fn set_macro_scope_param(
-        &mut self,
-        name: &str,
-        param: PublicKeyData,
-    ) -> Result<(), error::Token> {
-        self.set_scope_lenient(name, param)
     }
 
     pub(super) fn apply_parameters(&mut self) {
