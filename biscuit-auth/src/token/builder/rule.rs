@@ -7,12 +7,11 @@ use std::{collections::HashMap, convert::TryFrom, fmt, str::FromStr};
 use nom::Finish;
 
 use crate::{
+    token::public_keys::PublicKeyData,
     datalog::{self, SymbolTable},
-    error, PublicKey,
+    error,
 };
 
-#[cfg(feature = "datalog-macro")]
-use super::ToAnyParam;
 use super::{Convert, Expression, Predicate, Scope, Term};
 
 /// Builder for a Datalog rule
@@ -23,7 +22,7 @@ pub struct Rule {
     pub expressions: Vec<Expression>,
     pub parameters: Option<HashMap<String, Option<Term>>>,
     pub scopes: Vec<Scope>,
-    pub scope_parameters: Option<HashMap<String, Option<PublicKey>>>,
+    pub scope_parameters: Option<HashMap<String, Option<PublicKeyData>>>,
 }
 
 impl Rule {
@@ -199,7 +198,11 @@ impl Rule {
     }
 
     /// replace a scope parameter with the pubkey argument
-    pub fn set_scope(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope<T: Into<PublicKeyData>>(
+        &mut self,
+        name: &str,
+        pubkey: T,
+    ) -> Result<(), error::Token> {
         if let Some(parameters) = self.scope_parameters.as_mut() {
             match parameters.get_mut(name) {
                 None => Err(error::Token::Language(
@@ -209,7 +212,7 @@ impl Rule {
                     },
                 )),
                 Some(v) => {
-                    *v = Some(pubkey);
+                    *v = Some(pubkey.into());
                     Ok(())
                 }
             }
@@ -225,12 +228,16 @@ impl Rule {
 
     /// replace a scope parameter with the public key argument, without raising an error if the
     /// parameter is not present in the rule scope
-    pub fn set_scope_lenient(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope_lenient<T: Into<PublicKeyData>>(
+        &mut self,
+        name: &str,
+        pubkey: T,
+    ) -> Result<(), error::Token> {
         if let Some(parameters) = self.scope_parameters.as_mut() {
             match parameters.get_mut(name) {
                 None => Ok(()),
                 Some(v) => {
-                    *v = Some(pubkey);
+                    *v = Some(pubkey.into());
                     Ok(())
                 }
             }
@@ -242,30 +249,6 @@ impl Rule {
                 },
             ))
         }
-    }
-
-    #[cfg(feature = "datalog-macro")]
-    pub fn set_macro_param<T: ToAnyParam>(
-        &mut self,
-        name: &str,
-        param: T,
-    ) -> Result<(), error::Token> {
-        use super::AnyParam;
-
-        match param.to_any_param() {
-            AnyParam::Term(t) => self.set_lenient(name, t),
-            AnyParam::PublicKey(pubkey) => self.set_scope_lenient(name, pubkey),
-        }
-    }
-
-    // TODO maybe introduce a conversion trait to support refs, multiple values, non-pk scopes
-    #[cfg(feature = "datalog-macro")]
-    pub fn set_macro_scope_param(
-        &mut self,
-        name: &str,
-        param: PublicKey,
-    ) -> Result<(), error::Token> {
-        self.set_scope_lenient(name, param)
     }
 
     pub(super) fn apply_parameters(&mut self) {
@@ -315,7 +298,7 @@ impl Rule {
                 .map(|scope| {
                     if let Scope::Parameter(name) = &scope {
                         if let Some(Some(pubkey)) = parameters.get(name) {
-                            return Scope::PublicKey(*pubkey);
+                            return Scope::PublicKey(pubkey.clone());
                         }
                     }
                     scope
@@ -455,8 +438,7 @@ impl From<biscuit_parser::builder::Rule> for Rule {
                         (
                             k,
                             v.map(|pk| {
-                                PublicKey::from_bytes(&pk.key, pk.algorithm.into())
-                                    .expect("invalid public key")
+                                PublicKeyData::from_bytes(pk.algorithm.into(), pk.key)
                             }),
                         )
                     })

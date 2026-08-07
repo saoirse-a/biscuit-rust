@@ -4,7 +4,8 @@
  */
 use std::fmt;
 
-use crate::{datalog::SymbolTable, error, PublicKey};
+use crate::token::public_keys::PublicKeyData;
+use crate::{datalog::SymbolTable, error};
 
 use super::Convert;
 
@@ -16,7 +17,7 @@ pub enum Scope {
     /// Trusts the current block and all previous ones
     Previous,
     /// Trusts the current block and any block signed by the public key
-    PublicKey(PublicKey),
+    PublicKey(PublicKeyData),
     /// Used for parameter substitution
     Parameter(String),
 }
@@ -43,10 +44,11 @@ impl Convert<crate::token::Scope> for Scope {
             crate::token::Scope::Authority => Scope::Authority,
             crate::token::Scope::Previous => Scope::Previous,
             crate::token::Scope::PublicKey(key_id) => Scope::PublicKey(
-                *symbols
+                symbols
                     .public_keys
                     .get_key(*key_id)
-                    .ok_or(error::Format::UnknownExternalKey)?,
+                    .ok_or(error::Format::UnknownExternalKey)?
+                    .clone(),
             ),
         })
     }
@@ -57,7 +59,7 @@ impl fmt::Display for Scope {
         match self {
             Scope::Authority => write!(f, "authority"),
             Scope::Previous => write!(f, "previous"),
-            Scope::PublicKey(pk) => pk.write(f),
+            Scope::PublicKey(pk) => write!(f, "{pk}"),
             Scope::Parameter(s) => {
                 write!(f, "{{{s}}}")
             }
@@ -71,7 +73,7 @@ impl From<biscuit_parser::builder::Scope> for Scope {
             biscuit_parser::builder::Scope::Authority => Scope::Authority,
             biscuit_parser::builder::Scope::Previous => Scope::Previous,
             biscuit_parser::builder::Scope::PublicKey(pk) => Scope::PublicKey(
-                PublicKey::from_bytes(&pk.key, pk.algorithm.into()).expect("invalid public key"),
+                PublicKeyData::from_bytes(pk.algorithm.into(), pk.key)
             ),
             biscuit_parser::builder::Scope::Parameter(s) => Scope::Parameter(s),
         }

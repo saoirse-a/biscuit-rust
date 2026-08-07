@@ -6,10 +6,8 @@ use std::{convert::TryFrom, fmt, str::FromStr};
 
 use nom::Finish;
 
-use crate::{error, PublicKey};
+use crate::{error, token::public_keys::PublicKeyData};
 
-#[cfg(feature = "datalog-macro")]
-use super::ToAnyParam;
 use super::{display_rule_body, Rule, Term};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,10 +51,15 @@ impl Policy {
     }
 
     /// replace a scope parameter with the pubkey argument
-    pub fn set_scope(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope<T: Into<PublicKeyData>>(
+        &mut self,
+        name: &str,
+        pubkey: T,
+    ) -> Result<(), error::Token> {
+        let pubkey = pubkey.into();
         let mut found = false;
         for query in &mut self.queries {
-            if query.set_scope(name, pubkey).is_ok() {
+            if query.set_scope(name, pubkey.clone()).is_ok() {
                 found = true;
             }
         }
@@ -83,35 +86,16 @@ impl Policy {
     }
 
     /// replace a scope parameter with the pubkey argument, ignoring unknown parameters
-    pub fn set_scope_lenient(&mut self, name: &str, pubkey: PublicKey) -> Result<(), error::Token> {
+    pub fn set_scope_lenient<T: Into<PublicKeyData>>(
+        &mut self,
+        name: &str,
+        pubkey: T,
+    ) -> Result<(), error::Token> {
+        let pubkey = pubkey.into();
         for query in &mut self.queries {
-            query.set_scope_lenient(name, pubkey)?;
+            query.set_scope_lenient(name, pubkey.clone())?;
         }
         Ok(())
-    }
-
-    #[cfg(feature = "datalog-macro")]
-    pub fn set_macro_param<T: ToAnyParam>(
-        &mut self,
-        name: &str,
-        param: T,
-    ) -> Result<(), error::Token> {
-        use super::AnyParam;
-
-        match param.to_any_param() {
-            AnyParam::Term(t) => self.set_lenient(name, t),
-            AnyParam::PublicKey(p) => self.set_scope_lenient(name, p),
-        }
-    }
-
-    // TODO maybe introduce a conversion trait to support refs, multiple values, non-pk scopes
-    #[cfg(feature = "datalog-macro")]
-    pub fn set_macro_scope_param(
-        &mut self,
-        name: &str,
-        param: PublicKey,
-    ) -> Result<(), error::Token> {
-        self.set_scope_lenient(name, param)
     }
 
     pub fn validate_parameters(&self) -> Result<(), error::Token> {

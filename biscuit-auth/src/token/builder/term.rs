@@ -15,8 +15,6 @@ use crate::{
 };
 
 use super::{set, Convert, Fact};
-#[cfg(feature = "datalog-macro")]
-use super::{AnyParam, ToAnyParam};
 
 /// Builder for a Datalog value
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -393,23 +391,9 @@ impl fmt::Display for Term {
     }
 }
 
-#[cfg(feature = "datalog-macro")]
-impl ToAnyParam for Term {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term(self.clone())
-    }
-}
-
 impl From<i64> for Term {
     fn from(i: i64) -> Self {
         Term::Integer(i)
-    }
-}
-
-#[cfg(feature = "datalog-macro")]
-impl ToAnyParam for i64 {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term((*self).into())
     }
 }
 
@@ -431,13 +415,6 @@ impl From<bool> for Term {
     }
 }
 
-#[cfg(feature = "datalog-macro")]
-impl ToAnyParam for bool {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term((*self).into())
-    }
-}
-
 impl TryFrom<Term> for bool {
     type Error = error::Token;
     fn try_from(value: Term) -> Result<Self, Self::Error> {
@@ -456,23 +433,9 @@ impl From<String> for Term {
     }
 }
 
-#[cfg(feature = "datalog-macro")]
-impl ToAnyParam for String {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term((self.clone()).into())
-    }
-}
-
 impl From<&str> for Term {
     fn from(s: &str) -> Self {
         Term::Str(s.into())
-    }
-}
-
-#[cfg(feature = "datalog-macro")]
-impl ToAnyParam for &str {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term(self.to_string().into())
     }
 }
 
@@ -494,13 +457,6 @@ impl From<Vec<u8>> for Term {
     }
 }
 
-#[cfg(feature = "datalog-macro")]
-impl ToAnyParam for Vec<u8> {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term((self.clone()).into())
-    }
-}
-
 impl TryFrom<Term> for Vec<u8> {
     type Error = error::Token;
     fn try_from(value: Term) -> Result<Self, Self::Error> {
@@ -519,17 +475,10 @@ impl From<&[u8]> for Term {
     }
 }
 
-#[cfg(feature = "datalog-macro")]
-impl ToAnyParam for [u8] {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term(self.into())
-    }
-}
-
-#[cfg(all(feature = "uuid", feature = "datalog-macro"))]
-impl ToAnyParam for uuid::Uuid {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term(Term::Bytes(self.as_bytes().to_vec()))
+#[cfg(feature = "uuid")]
+impl From<uuid::Uuid> for Term {
+    fn from(u: uuid::Uuid) -> Self {
+        Term::Bytes(u.as_bytes().to_vec())
     }
 }
 
@@ -537,13 +486,6 @@ impl From<SystemTime> for Term {
     fn from(t: SystemTime) -> Self {
         let dur = t.duration_since(UNIX_EPOCH).unwrap();
         Term::Date(dur.as_secs())
-    }
-}
-
-#[cfg(feature = "datalog-macro")]
-impl ToAnyParam for SystemTime {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term((*self).into())
     }
 }
 
@@ -565,13 +507,6 @@ impl From<BTreeSet<Term>> for Term {
     }
 }
 
-#[cfg(feature = "datalog-macro")]
-impl ToAnyParam for BTreeSet<Term> {
-    fn to_any_param(&self) -> AnyParam {
-        AnyParam::Term((self.clone()).into())
-    }
-}
-
 impl<T: Ord + TryFrom<Term, Error = error::Token>> TryFrom<Term> for BTreeSet<T> {
     type Error = error::Token;
     fn try_from(value: Term) -> Result<Self, Self::Error> {
@@ -584,7 +519,7 @@ impl<T: Ord + TryFrom<Term, Error = error::Token>> TryFrom<Term> for BTreeSet<T>
     }
 }
 
-// TODO: From and ToAnyParam for arrays and maps
+// TODO: From for arrays and maps
 impl TryFrom<serde_json::Value> for Term {
     type Error = &'static str;
 

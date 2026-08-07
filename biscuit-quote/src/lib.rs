@@ -449,7 +449,7 @@ impl Item {
         };
 
         self.middle.extend(quote! {
-            __biscuit_auth_item.set_macro_param(#name, #expr).unwrap();
+            __biscuit_auth_item.set_lenient(#name, #expr).unwrap();
         });
     }
 
@@ -463,7 +463,7 @@ impl Item {
         };
 
         self.middle.extend(quote! {
-            __biscuit_auth_item.set_macro_scope_param(#name, #expr).unwrap();
+            __biscuit_auth_item.set_scope_lenient(#name, #expr).unwrap();
         });
     }
 }

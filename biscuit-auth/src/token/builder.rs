@@ -11,7 +11,8 @@ use std::{
 
 // reexport those because the builder uses the same definitions
 use super::Block;
-use crate::crypto::PublicKey;
+#[cfg(test)]
+use crate::token::public_keys::PublicKeyData;
 use crate::datalog::SymbolTable;
 pub use crate::datalog::{
     Binary as DatalogBinary, Expression as DatalogExpression, Op as DatalogOp,
@@ -162,17 +163,6 @@ pub fn parameter(p: &str) -> Term {
     Term::Parameter(p.to_string())
 }
 
-#[cfg(feature = "datalog-macro")]
-pub enum AnyParam {
-    Term(Term),
-    PublicKey(PublicKey),
-}
-
-#[cfg(feature = "datalog-macro")]
-pub trait ToAnyParam {
-    fn to_any_param(&self) -> AnyParam;
-}
-
 #[cfg(test)]
 mod tests {
     use std::{collections::HashMap, convert::TryFrom};
@@ -213,12 +203,11 @@ mod tests {
 
     #[test]
     fn set_rule_scope_parameters() {
-        let pubkey = PublicKey::from_bytes(
-            &hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db")
-                .unwrap(),
+        let pubkey = PublicKeyData::from_bytes(
             Algorithm::Ed25519,
-        )
-        .unwrap();
+            hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db")
+                .unwrap(),
+        );
         let mut rule = Rule::try_from(
             "fact($var1, {p2}) <- f1($var1, $var3), f2({p2}, $var3, {p4}), $var3.starts_with({p2}) trusting {pk}",
         )
@@ -240,12 +229,11 @@ mod tests {
         params.insert("p2".to_string(), 1i64.into());
         params.insert("p3".to_string(), true.into());
         params.insert("p4".to_string(), "this will be ignored".into());
-        let pubkey = PublicKey::from_bytes(
-            &hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db")
-                .unwrap(),
+        let pubkey = PublicKeyData::from_bytes(
             Algorithm::Ed25519,
-        )
-        .unwrap();
+            hex::decode("6e9e6d5a75cf0c0e87ec1256b4dfed0ca3ba452912d213fcc70f8516583db9db")
+                .unwrap(),
+        );
         let mut scope_params = HashMap::new();
         scope_params.insert("pk".to_string(), pubkey);
         builder = builder

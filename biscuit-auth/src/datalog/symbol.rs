@@ -6,12 +6,13 @@
 use std::collections::HashSet;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
-pub type SymbolIndex = u64;
-use crate::crypto::PublicKey;
 use crate::token::default_symbol_table;
+use crate::token::public_keys::PublicKeyData;
 use crate::{error, token::public_keys::PublicKeys};
 
 use super::{Check, Fact, Predicate, Rule, Term, World};
+
+pub type SymbolIndex = u64;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SymbolTable {
@@ -76,10 +77,10 @@ impl SymbolTable {
 
     pub fn from_symbols_and_public_keys(
         symbols: Vec<String>,
-        public_keys: Vec<PublicKey>,
+        public_keys: Vec<PublicKeyData>,
     ) -> Result<Self, error::Format> {
         let mut table = Self::from(symbols)?;
-        table.public_keys = PublicKeys::from(public_keys);
+        table.public_keys = PublicKeys::from_keys(public_keys);
         Ok(table)
     }
 
@@ -291,7 +292,7 @@ impl SymbolTable {
                     crate::token::Scope::Previous => "previous".to_string(),
                     crate::token::Scope::PublicKey(key_id) => {
                         match self.public_keys.get_key(*key_id) {
-                            Some(key) => key.print(),
+                            Some(key) => key.to_string(),
                             None => "<unknown public key id>".to_string(),
                         }
                     }
