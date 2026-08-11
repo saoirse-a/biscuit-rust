@@ -96,10 +96,6 @@ impl Default for TrustedOrigins {
 }
 
 impl TrustedOrigins {
-    pub fn default() -> TrustedOrigins {
-        <TrustedOrigins as Default>::default()
-    }
-
     pub fn from_scopes(
         rule_scopes: &[Scope],
         default_origins: &TrustedOrigins,
