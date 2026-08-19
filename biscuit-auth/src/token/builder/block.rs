@@ -205,8 +205,7 @@ impl BlockBuilder {
     ///
     /// `BlockBuilder` is serialized as a self-contained biscuit block; it must carry its symbols
     /// and public keys in its internment table. The block's contents are not authenticated.
-    /// [`ThirdPartyBlock`](crate::ThirdPartyBlock) instead.
-    pub fn from<T: AsRef<[u8]>>(slice: T) -> Result<Self, error::Token> {
+    pub fn from_bytes<T: AsRef<[u8]>>(slice: T) -> Result<Self, error::Token> {
         let data = crate::format::schema::Block::decode(slice.as_ref()).map_err(|e| {
             error::Format::DeserializationError(format!("deserialization error: {e:?}"))
         })?;
